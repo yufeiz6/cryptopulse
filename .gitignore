@@ -1,0 +1,13 @@
+# Node / frontend
+node_modules/
+dist/
+*.local
+.env
+
+# .NET / backend
+bin/
+obj/
+
+# OS / editor
+.DS_Store
+.vscode/
