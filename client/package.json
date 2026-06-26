@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
+    "@tailwindcss/vite": "^4.3.1",
     "@tanstack/react-virtual": "^3.14.3",
     "lightweight-charts": "^5.2.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

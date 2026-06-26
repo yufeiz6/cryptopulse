@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createChart, CandlestickSeries, type IChartApi } from "lightweight-charts";
 
-// Binance kline REST endpoint shape: each kline is an array
-// [openTime, open, high, low, close, volume, ...]
 type Kline = [number, string, string, string, string, string, ...unknown[]];
 
 export function Chart({ symbol }: { symbol: string }) {
@@ -11,23 +9,35 @@ export function Chart({ symbol }: { symbol: string }) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // 1. Create the chart inside our container div
     const chart: IChartApi = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
       height: 300,
+      // Dark theme to match the rest of the UI
+      layout: {
+        background: { color: "transparent" },
+        textColor: "#9ca3af",
+      },
+      grid: {
+        vertLines: { color: "#1f2937" },
+        horzLines: { color: "#1f2937" },
+      },
     });
 
-    // 2. Add a candlestick series
-    const series = chart.addSeries(CandlestickSeries);
+    const series = chart.addSeries(CandlestickSeries, {
+      upColor: "#4ade80",
+      downColor: "#f87171",
+      borderVisible: false,
+      wickUpColor: "#4ade80",
+      wickDownColor: "#f87171",
+    });
 
-    // 3. Fetch recent 1-minute klines from Binance and draw them
     fetch(
       `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=1m&limit=100`
     )
       .then((res) => res.json())
       .then((data: Kline[]) => {
         const candles = data.map((k) => ({
-          time: (k[0] / 1000) as never, // Binance gives ms; lightweight-charts wants seconds
+          time: (k[0] / 1000) as never,
           open: parseFloat(k[1]),
           high: parseFloat(k[2]),
           low: parseFloat(k[3]),
@@ -38,17 +48,18 @@ export function Chart({ symbol }: { symbol: string }) {
       })
       .catch((err) => console.error("Failed to load klines:", err));
 
-    // 4. Clean up the chart when symbol changes or component unmounts
     return () => {
       chart.remove();
     };
-  }, [symbol]); // re-run whenever the selected symbol changes
+  }, [symbol]);
 
   return (
     <div>
-      <h3>{symbol} · 1m</h3>
+      <h3 className="text-lg font-semibold mb-3 text-gray-100">
+          {symbol.replace("USDT", "")}{" "} <span className="text-gray-500 text-sm font-normal">· 1m</span>
+      </h3>
       <div ref={containerRef} />
-      <p style={{ fontSize: 12, color: "#888" }}>
+      <p className="text-xs text-gray-600 mt-2">
         Charts by TradingView Lightweight Charts™
       </p>
     </div>
