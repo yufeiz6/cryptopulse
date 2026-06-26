@@ -11,7 +11,6 @@ type Ticker = {
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// One row, wrapped in memo: it only re-renders when its OWN props change.
 const Row = memo(function Row({
   ticker,
   top,
@@ -47,31 +46,65 @@ function App() {
   const [tickers, setTickers] = useState<Ticker[]>([]);
   const [connected, setConnected] = useState(false);
 
+  //     A "staging area" that survives re-renders but does NOT trigger them.
+  //     Incoming data is written here first, instead of into state directly.
+  const pendingRef = useRef<Map<string, Ticker>>(new Map());
+
   useEffect(() => {
+    const pending = pendingRef.current;
+    let running = true;
+    let rafId = 0;
+
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${API_URL}/hub/tickers`)
       .withAutomaticReconnect()
       .build();
 
     connection.on("tickers", (data: Ticker[]) => {
-      setTickers((prev) => {
-        const map = new Map<string, Ticker>();
-        for (const t of prev) map.set(t.symbol, t);
-        for (const t of data) map.set(t.symbol, t);
-        return Array.from(map.values());
-      });
+      for (const t of data) pending.set(t.symbol, t);
     });
 
-    connection.start()
-      .then(() => setConnected(true))
-      .catch((err) => console.error("Connection failed:", err));
+    const tick = () => {
+      if (!running) return;
+      if (pending.size > 0) {
+        setTickers((prev) => {
+          const map = new Map<string, Ticker>();
+          for (const t of prev) map.set(t.symbol, t);
+          for (const [sym, t] of pending) map.set(sym, t);
+          pending.clear();
+          return Array.from(map.values());
+        });
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+
+    // Delay start slightly so StrictMode's immediate mount→unmount→mount
+    // settles first; only the surviving run actually connects.
+    const timer = setTimeout(() => {
+      connection
+        .start()
+        .then(() => {
+          if (!running) {
+            connection.stop();
+            return;
+          }
+          setConnected(true);
+          rafId = requestAnimationFrame(tick);
+        })
+        .catch(() => {
+          /* ignore the noisy "stopped during negotiation" */
+        });
+    }, 0);
 
     return () => {
+      running = false;
+      clearTimeout(timer);
+      cancelAnimationFrame(rafId);
+      pending.clear();
       connection.stop();
     };
   }, []);
 
-  // Sorted full list (still hundreds of rows)
   const rows = [...tickers].sort((a, b) => b.volume - a.volume);
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -90,7 +123,6 @@ function App() {
         {connected ? "● Live" : "○ Connecting…"} · {tickers.length} pairs
       </p>
 
-      {/* Header row (outside the scroll area so it stays fixed) */}
       <div style={{ display: "flex", fontWeight: "bold", borderBottom: "2px solid #ccc", padding: "8px 0" }}>
         <div style={cell}>Symbol</div>
         <div style={cell}>Price</div>
@@ -98,14 +130,11 @@ function App() {
         <div style={cell}>Volume</div>
       </div>
 
-      {/* Scroll container */}
       <div ref={parentRef} style={{ height: 600, overflow: "auto" }}>
         <div style={{ height: rowVirtualizer.getTotalSize(), position: "relative" }}>
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const t = rows[virtualRow.index];
-            return (
-              <Row key={t.symbol} ticker={t} top={virtualRow.start} />
-            );
+            return <Row key={t.symbol} ticker={t} top={virtualRow.start} />;
           })}
         </div>
       </div>
