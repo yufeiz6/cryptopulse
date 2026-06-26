@@ -19,6 +19,23 @@ function formatVolume(v: number): string {
   return "$" + v.toFixed(0);
 }
 
+function formatPrice(p: number): string {
+  let decimals: number;
+  if (p >= 1000) decimals = 2;       // 59,648.50
+  else if (p >= 1) decimals = 4;     // 1.1401
+  else if (p >= 0.01) decimals = 5;  // 0.07528
+  else if (p >= 0.0001) decimals = 6;// 0.000522
+  else decimals = 8;                 // 0.00000238
+
+  return (
+    "$" +
+    p.toLocaleString("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })
+  );
+}
+
 const Row = memo(function Row({
   ticker,
   top,
@@ -56,7 +73,7 @@ const Row = memo(function Row({
         {ticker.symbol.replace("USDT", "")}
       </div>
       <div className="flex-1 text-right font-mono text-gray-200 tabular-nums">
-        {ticker.price}
+        {formatPrice(ticker.price)}
       </div>
       <div
         className={`flex-1 text-right font-mono tabular-nums ${
