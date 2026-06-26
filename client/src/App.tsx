@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { Chart } from "./Chart";
 
 type Ticker = {
   symbol: string;
@@ -14,12 +15,15 @@ const API_URL = import.meta.env.VITE_API_URL;
 const Row = memo(function Row({
   ticker,
   top,
+  onSelect,
 }: {
   ticker: Ticker;
   top: number;
+  onSelect: (symbol: string) => void;
 }) {
   return (
     <div
+      onClick={() => onSelect(ticker.symbol)}
       style={{
         position: "absolute",
         top: 0,
@@ -30,6 +34,7 @@ const Row = memo(function Row({
         display: "flex",
         alignItems: "center",
         borderBottom: "1px solid #eee",
+        cursor: "pointer",
       }}
     >
       <div style={cell}>{ticker.symbol}</div>
@@ -45,6 +50,7 @@ const Row = memo(function Row({
 function App() {
   const [tickers, setTickers] = useState<Ticker[]>([]);
   const [connected, setConnected] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
 
   //     A "staging area" that survives re-renders but does NOT trigger them.
   //     Incoming data is written here first, instead of into state directly.
@@ -133,11 +139,23 @@ function App() {
       <div ref={parentRef} style={{ height: 600, overflow: "auto" }}>
         <div style={{ height: rowVirtualizer.getTotalSize(), position: "relative" }}>
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const t = rows[virtualRow.index];
-            return <Row key={t.symbol} ticker={t} top={virtualRow.start} />;
-          })}
+          const t = rows[virtualRow.index];
+          return (
+            <Row
+              key={t.symbol}
+              ticker={t}
+              top={virtualRow.start}
+              onSelect={setSelected}
+            />
+          );
+        })}
         </div>
       </div>
+      {selected && (
+        <div style={{ marginTop: 24 }}>
+          <Chart symbol={selected} />
+        </div>
+      )}
     </div>
   );
 }
