@@ -10,7 +10,7 @@ type Ticker = {
   volume: number;
 };
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "https://cryptopulse-backend-orn1.onrender.com";
 
 function formatVolume(v: number): string {
   if (v >= 1_000_000_000) return "$" + (v / 1_000_000_000).toFixed(2) + "B";
