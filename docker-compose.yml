@@ -1,0 +1,12 @@
+services:
+  backend:
+    build: ./server
+    ports:
+      - "5203:8080"
+
+  frontend:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
