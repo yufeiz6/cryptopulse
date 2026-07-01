@@ -5,10 +5,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(
+                  "http://localhost:5173",
+                  "https://cryptopulse-frontend-gy4g.onrender.com"
+              )
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials()); // (1) SignalR needs this
+              .AllowCredentials());
 });
 
 builder.Services.AddSignalR();                 // (2) register SignalR
