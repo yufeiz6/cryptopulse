@@ -39,10 +39,10 @@ All numbers measured with the React DevTools Profiler and Chrome DevTools Perfor
 At 60fps, the browser has a **16.7 ms** budget per frame. The naive version blew past it at 57.5 ms (dropping frames on every update); the optimized version fits comfortably under budget.
 
 **Before — one update re-renders the whole app (57.5 ms):**
-![Before optimization](docs/before-profiler.png)
+![Before optimization](docs/before-profiler.webp)
 
 **After — only changed rows re-render (7.5 ms):**
-![After optimization](docs/after-profiler.png)
+![After optimization](docs/after-profiler.webp)
 
 ---
 
